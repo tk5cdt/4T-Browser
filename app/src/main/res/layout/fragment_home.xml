@@ -19,6 +19,7 @@
         android:queryHint="@string/search_hint"
         android:background="@drawable/custom_design"
         android:layout_marginHorizontal="24dp"
-        android:iconifiedByDefault="false"/>
+        android:iconifiedByDefault="false"
+        android:queryBackground="@android:color/transparent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

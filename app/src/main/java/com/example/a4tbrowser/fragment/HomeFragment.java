@@ -36,6 +36,8 @@ public class HomeFragment extends Fragment {
         MainActivity activity = (MainActivity) requireActivity();
 
         activity.binding.topSearchBar.setText(null);
+        activity.binding.webIcon.setImageResource(R.drawable.baseline_search_24);
+
         binding.searchView.setQuery(null, false);
 
         binding.searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {

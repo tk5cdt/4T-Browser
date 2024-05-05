@@ -1,11 +1,13 @@
 package com.example.a4tbrowser.fragment;
 
 import android.annotation.SuppressLint;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
 
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.URLUtil;
@@ -35,7 +37,7 @@ public class BrowseFragment extends Fragment {
         return view;
     }
 
-    @SuppressLint("SetJavaScriptEnabled")
+    @SuppressLint({"SetJavaScriptEnabled", "ClickableViewAccessibility"})
     @Override
     public void onResume() {
         super.onResume();
@@ -51,13 +53,68 @@ public class BrowseFragment extends Fragment {
                 super.doUpdateVisitedHistory(view, url, isReload);
                 activity.binding.topSearchBar.setText(url);
             }
+
+            @Override
+            public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                super.onPageStarted(view, url, favicon);
+                activity.binding.progressBar.setProgress(0);
+                activity.binding.progressBar.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                activity.binding.progressBar.setVisibility(View.GONE);
+            }
+
         });
-        binding.webView.setWebChromeClient(new WebChromeClient());
+        binding.webView.setWebChromeClient(new WebChromeClient(){
+            @Override
+            public void onReceivedIcon(WebView view, Bitmap icon) {
+                super.onReceivedIcon(view, icon);
+                try {
+                    activity.binding.webIcon.setImageBitmap(icon);
+                } catch (Exception ignored) {
+                }
+            }
+
+            @Override
+            public void onShowCustomView(View view, CustomViewCallback callback) {
+                super.onShowCustomView(view, callback);
+                binding.webView.setVisibility(View.GONE);
+                binding.customView.setVisibility(View.VISIBLE);
+                binding.customView.addView(view);
+                activity.binding.getRoot().transitionToEnd();
+            }
+
+            @Override
+            public void onHideCustomView() {
+                super.onHideCustomView();
+                binding.webView.setVisibility(View.VISIBLE);
+                binding.customView.setVisibility(View.GONE);
+                binding.customView.removeAllViews();
+            }
+
+            @Override
+            public void onProgressChanged(WebView view, int newProgress) {
+                super.onProgressChanged(view, newProgress);
+                activity.binding.progressBar.setProgress(newProgress);
+            }
+        });
         if (URLUtil.isValidUrl(url))
             binding.webView.loadUrl(url);
         else if (url.contains(".com"))
             binding.webView.loadUrl(url);
         else
             binding.webView.loadUrl("https://www.google.com/search?q=" + url);
+
+        binding.webView.setOnTouchListener(new View.OnTouchListener() {
+            @SuppressLint("ClickableViewAccessibility")
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                activity.binding.getRoot().onTouchEvent(event);
+                return false;
+            }
+        });
     }
 }
