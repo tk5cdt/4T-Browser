@@ -51,6 +51,16 @@ public class BrowseFragment extends Fragment {
         binding.webView.getSettings().setDisplayZoomControls(false);
         binding.webView.setWebViewClient(new WebViewClient(){
             @Override
+            public void onLoadResource(WebView view, String url) {
+                super.onLoadResource(view, url);
+                if (MainActivity.desktopMode){
+                    view.evaluateJavascript("document.querySelector('meta[name=\"viewport\"]').setAttribute('content'," +
+                            " 'width=1024px, initial-scale=' + (document.documentElement.clientWidth / 1024));", null);
+                    view.zoomOut();
+                }
+            }
+
+            @Override
             public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
                 super.doUpdateVisitedHistory(view, url, isReload);
                 activity.binding.topSearchBar.setText(url);
@@ -61,6 +71,9 @@ public class BrowseFragment extends Fragment {
                 super.onPageStarted(view, url, favicon);
                 activity.binding.progressBar.setProgress(0);
                 activity.binding.progressBar.setVisibility(View.VISIBLE);
+                if(url.contains("you")){
+                    activity.binding.getRoot().transitionToEnd();
+                }
             }
 
             @Override
