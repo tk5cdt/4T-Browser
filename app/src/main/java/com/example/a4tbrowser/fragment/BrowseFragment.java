@@ -10,8 +10,10 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.CookieManager;
 import android.webkit.URLUtil;
 import android.webkit.WebChromeClient;
+import android.webkit.WebStorage;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
@@ -116,5 +118,18 @@ public class BrowseFragment extends Fragment {
                 return false;
             }
         });
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        binding.webView.clearMatches();
+        binding.webView.clearHistory();
+        binding.webView.clearFormData();
+        binding.webView.clearSslPreferences();
+        binding.webView.clearCache(true);
+        CookieManager.getInstance().removeAllCookies(null);
+        WebStorage.getInstance().deleteAllData();
+
     }
 }

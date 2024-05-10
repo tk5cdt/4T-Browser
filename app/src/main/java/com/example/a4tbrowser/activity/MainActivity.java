@@ -2,13 +2,17 @@ package com.example.a4tbrowser.activity;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.drawable.ColorDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
 import android.os.Bundle;
+import android.view.Gravity;
+import android.view.View;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -20,8 +24,10 @@ import androidx.viewpager2.adapter.FragmentStateAdapter;
 
 import com.example.a4tbrowser.R;
 import com.example.a4tbrowser.databinding.ActivityMainBinding;
+import com.example.a4tbrowser.databinding.MoreFeaturesBinding;
 import com.example.a4tbrowser.fragment.BrowseFragment;
 import com.example.a4tbrowser.fragment.HomeFragment;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
         binding.myPager.setAdapter(new TabAdapter(getSupportFragmentManager(), getLifecycle()));
         binding.myPager.setUserInputEnabled(false);
         fragments.add(new HomeFragment());
+        initView();
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @SuppressLint("NotifyDataSetChanged")
@@ -112,4 +119,39 @@ public class MainActivity extends AppCompatActivity {
         return isAvailable;
     }
 
+    void initView(){
+        
+        binding.settingButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                View view = getLayoutInflater().inflate(R.layout.more_features, binding.getRoot(), false);
+                @NonNull MoreFeaturesBinding dialogBinding = MoreFeaturesBinding.bind(view);
+                AlertDialog dialog = new MaterialAlertDialogBuilder(MainActivity.this).setView(view).create();
+                Objects.requireNonNull(dialog.getWindow()).getAttributes().gravity = Gravity.BOTTOM;
+                Objects.requireNonNull(dialog.getWindow()).getAttributes().y = 50;
+                dialog.getWindow().setBackgroundDrawable(new ColorDrawable(0xFFFFFFFF));
+                dialog.show();
+
+                dialogBinding.btnBack.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        getOnBackPressedDispatcher().onBackPressed();
+                    }
+                });
+                dialogBinding.btnForward.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        BrowseFragment frag = null;
+                        try {
+                            frag = (BrowseFragment) fragments.get(fragments.size() - 1);
+                            if (frag.binding.webView.canGoForward()) {
+                                frag.binding.webView.goForward();
+                            }
+                        }catch (Exception ignored) {}
+                    }
+                });
+            }
+        });
+    }
 }
