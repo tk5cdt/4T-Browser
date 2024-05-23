@@ -21,12 +21,17 @@ import com.example.a4tbrowser.R;
 import com.example.a4tbrowser.activity.MainActivity;
 import com.example.a4tbrowser.databinding.FragmentBrowseBinding;
 
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
+
 public class BrowseFragment extends Fragment {
     String url;
     public BrowseFragment(String url) {
         this.url = url;
     }
     public FragmentBrowseBinding binding;
+    //favicon
+    public Bitmap favicon=null;
 
 
     @Override
@@ -89,7 +94,22 @@ public class BrowseFragment extends Fragment {
                 super.onReceivedIcon(view, icon);
                 try {
                     activity.binding.webIcon.setImageBitmap(icon);
-                } catch (Exception ignored) {
+                    //activity.binding.
+                    favicon = icon;
+                    if(activity.isBookmark(view.getUrl()) != -1)
+                    {
+                        activity.bookmarkIndex = activity.isBookmark(view.getUrl());
+                    }
+                    if(activity.bookmarkIndex != -1)
+                    {
+                        ByteArrayOutputStream a = new ByteArrayOutputStream();
+                        if(icon != null) {
+                            icon.compress(Bitmap.CompressFormat.PNG, 100, a);
+                            activity.bookmarkList.get(activity.bookmarkIndex).setImg(a.toByteArray());
+                        }
+                    }
+                }
+                catch (Exception ignored) {
                 }
             }
 
