@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.drawable.ColorDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
+import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.print.PrintAttributes;
@@ -17,6 +18,7 @@ import android.view.Window;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.webkit.WebView;
+import android.content.Intent;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
@@ -32,6 +34,7 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.Lifecycle;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
 import com.example.a4tbrowser.R;
@@ -57,6 +60,9 @@ public class MainActivity extends AppCompatActivity {
     Boolean fullScreen = true;
     public static Boolean desktopMode = false;
 
+    //Khai bao cho refresh
+    private SwipeRefreshLayout swipeRefreshLayout;
+    private WebView webView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -71,6 +77,27 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+
+        // Thiết lập sự kiện làm mới (refresh)
+        binding.swipe.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                // Kiểm tra kết nối internet trước khi làm mới
+                if (isNetworkAvailable()) {
+                    // Nếu có kết nối internet, load lại link url hiện tại
+                    BrowseFragment fragment = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
+                    fragment.binding.webView.loadUrl(fragment.binding.webView.getUrl());
+                    binding.swipe.setRefreshing(false);
+                } else {
+                    // Nếu không có kết nối internet, hiển thị thông báo
+                    showMessage("No internet connection");
+                    // Dừng hiệu ứng làm mới
+                    binding.swipe.setRefreshing(false);
+                }
+            }
+        });
+
         binding.myPager.setAdapter(new TabAdapter(getSupportFragmentManager(), getLifecycle()));
         binding.myPager.setUserInputEnabled(false);
         fragments.add(new HomeFragment());
@@ -100,6 +127,21 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+    // Phương thức kiểm tra kết nối internet
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (connectivityManager != null) {
+            NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+            return activeNetworkInfo != null && activeNetworkInfo.isAvailable();
+        }
+        return false;
+    }
+    // Phương thức thông báo
+    public void showMessage(String message) {
+        Snackbar.make(binding.getRoot(), message, Snackbar.LENGTH_SHORT).show();
+    }
+
 
     private class TabAdapter extends FragmentStateAdapter {
         public TabAdapter(@NonNull FragmentManager fragmentManager, Lifecycle lifecycle) {
@@ -243,6 +285,55 @@ public class MainActivity extends AppCompatActivity {
                         }catch (Exception ignored) {}
                     }
                 });
+                dialogBinding.btnRefresh.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        BrowseFragment fragment = null;
+                        try {
+                            fragment = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
+                        } catch (Exception ignored) {
+                        }
+                        if (fragment != null && fragment.binding.webView != null) {
+                            if (isNetworkAvailable()) {
+                                fragment.binding.webView.loadUrl(fragment.binding.webView.getUrl());
+                                dialog.dismiss();
+                            } else {
+                                showMessage("No internet connection");
+                                dialog.dismiss();
+                            }
+                        }
+                    }
+                });
+                dialogBinding.btnShare.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        // Get the current BrowseFragment
+                        BrowseFragment fragment = null;
+                        try {
+                            fragment = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
+                        } catch (Exception ignored) {
+                            // Handle potential exceptions
+                        }
+
+                        // Check if the fragment exists and has a webView
+                        if (fragment != null && fragment.binding.webView != null) {
+                            // Get the current URL of the webView
+                            String urlToShare = fragment.binding.webView.getUrl();
+
+                            // Create an Intent with the URL action and set the URL as data
+                            Intent intent = new Intent(Intent.ACTION_SEND);
+                            intent.setType("text/plain");
+                            intent.putExtra(Intent.EXTRA_TEXT, urlToShare);
+
+                            // Use the Chooser to show available sharing options
+                            Intent chooserIntent = Intent.createChooser(intent, "Share this link");
+                            startActivity(chooserIntent);
+                        }
+                    }
+                });
+
+
+
             }
         });
     }
