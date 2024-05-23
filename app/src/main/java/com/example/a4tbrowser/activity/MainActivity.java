@@ -1,7 +1,9 @@
 package com.example.a4tbrowser.activity;
 
 import android.annotation.SuppressLint;
+import android.app.Dialog;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.drawable.ColorDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
@@ -14,9 +16,11 @@ import android.print.PrintManager;
 import android.view.Gravity;
 import android.view.View;
 import android.view.Window;
-import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.webkit.WebView;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
@@ -35,13 +39,17 @@ import androidx.lifecycle.Lifecycle;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
 import com.example.a4tbrowser.R;
+import com.example.a4tbrowser.database.MyDatabase;
 import com.example.a4tbrowser.databinding.ActivityMainBinding;
+import com.example.a4tbrowser.databinding.BookmarkDialogBinding;
 import com.example.a4tbrowser.databinding.MoreFeaturesBinding;
 import com.example.a4tbrowser.fragment.BrowseFragment;
 import com.example.a4tbrowser.fragment.HomeFragment;
+import com.example.a4tbrowser.model.BookmarkEntity;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 
+import java.io.ByteArrayOutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -52,10 +60,13 @@ import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
     List<Fragment> fragments = new ArrayList<>();
+    public List<BookmarkEntity> bookmarkList = new ArrayList<>();
     public ActivityMainBinding binding;
     PrintJob printJob;
     Boolean fullScreen = true;
     public static Boolean desktopMode = false;
+
+    public int bookmarkIndex = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -144,7 +155,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void initView(){
-        
+
         binding.settingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -243,6 +254,41 @@ public class MainActivity extends AppCompatActivity {
                         }catch (Exception ignored) {}
                     }
                 });
+                // Ton
+                dialogBinding.btnBookmark.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+
+                        /*// lưu trữ bookmark vào room database
+                        String name = binding.topSearchBar.getText().toString();
+                        // lấy url từ webView của fragment đang mở
+                        String url = binding.topSearchBar.getText().toString();
+
+                        try {
+                            BrowseFragment frag = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
+                            name = frag.binding.webView.getTitle();
+                            url = frag.binding.webView.getUrl();
+                        }catch (Exception ignored) {}
+                        if(name.isEmpty() || url.isEmpty()){
+                            Snackbar.make(binding.getRoot(), "Please wait for the page to load", Snackbar.LENGTH_SHORT).show();
+                        }
+                        BookmarkEntity bookmarkEntity = new BookmarkEntity(name, url);
+                        MyDatabase.getDatabase(MainActivity.this).bDAO().insertBookmark(bookmarkEntity);
+                        Snackbar.make(binding.getRoot(), "Bookmark added", Snackbar.LENGTH_SHORT).show();*/
+                        BrowseFragment frag = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
+                        if(bookmarkIndex == -1)
+                        {
+                            View vb = getLayoutInflater().inflate(R.layout.bookmark_dialog, binding.getRoot(), false);
+                            BookmarkDialogBinding binding = BookmarkDialogBinding.bind(vb);
+                            Dialog dialog = new MaterialAlertDialogBuilder(MainActivity.this).setView(vb).create();
+                            binding.bookmarkMessage.setText("Url"+ frag.binding.webView.getUrl());
+
+                            /*try {
+                            }catch (Exception e){}*/
+                            openDialog(Gravity.CENTER);
+                        }
+                    }
+                });
             }
         });
     }
@@ -279,5 +325,99 @@ public class MainActivity extends AppCompatActivity {
         PrintAttributes printAttributes = new PrintAttributes.Builder().build();
         printJob = printManager.print(jobName, printAdapter, printAttributes);
     }
-    
+
+    private void openDialog(int gravity) {
+        final Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.bookmark_dialog);
+
+
+        Window window = dialog.getWindow();
+        if(window == null)
+        {
+            return;
+        }
+
+        window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT);
+        window.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+
+        WindowManager.LayoutParams windowAttributes = window.getAttributes();
+        windowAttributes.gravity = gravity;
+        window.setAttributes(windowAttributes);
+        TextView bookmarkMessage = dialog.findViewById(R.id.bookmark_message);
+        String url="";
+        try {
+            BrowseFragment frag = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
+            url = frag.binding.webView.getUrl();
+        }catch (Exception ignored) {}
+
+        // Set the URL on the TextView
+        bookmarkMessage.setText(url);
+
+        if(Gravity.CENTER == gravity)
+        {
+            dialog.setCancelable(true);
+        }
+        else
+            dialog.setCancelable(false);
+
+        EditText edtName = dialog.findViewById(R.id.bookmark_title);
+        Button btnAdd = dialog.findViewById(R.id.btn_add);
+        Button btnCancel = dialog.findViewById(R.id.btn_cancel);
+
+        btnCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+        btnAdd.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //dialog.dismiss();
+                // lưu trữ bookmark vào room database
+                String name="";
+                name = edtName.getText().toString();
+
+                // lấy url từ webView của fragment đang mở
+                /*String url="";
+                try {
+                    BrowseFragment frag = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
+                    //name = frag.binding.webView.getTitle();
+                    url = frag.binding.webView.getUrl();
+                }catch (Exception ignored) {}*/
+                BookmarkEntity bookmarkEntity;
+                // lấy hình ảnh
+                try {
+
+                    ByteArrayOutputStream a = new ByteArrayOutputStream();
+                    final Bitmap icon = ((BrowseFragment) fragments.get(binding.myPager.getCurrentItem())).favicon;
+                    if(icon != null) {
+                        icon.compress(Bitmap.CompressFormat.PNG, 100, a);
+                    }
+                    if(name.isEmpty() || bookmarkMessage.getText().toString().isEmpty()){
+                        Snackbar.make(binding.getRoot(), "Please wait for the page to load", Snackbar.LENGTH_SHORT).show();
+                    }
+                    bookmarkEntity = new BookmarkEntity(name, bookmarkMessage.getText().toString(), a.toByteArray());
+                }
+                catch (Exception e)
+                {
+                    bookmarkEntity = new BookmarkEntity(name, bookmarkMessage.getText().toString(), null);
+                }
+                MyDatabase.getDatabase(MainActivity.this).bDAO().insertBookmark(bookmarkEntity);
+                Snackbar.make(binding.getRoot(), "Bookmark added", Snackbar.LENGTH_SHORT).show();
+            }
+        });
+        dialog.show();
+    }
+    public int isBookmark(String url){
+        // duyệt các bookmark trong list bookmark
+        for(int i = 0; i < bookmarkList.size(); i++){
+            if(bookmarkList.get(i).getUrlPath() == url){
+                return i;
+            }
+        }
+        return -1;
+    }
+
 }
