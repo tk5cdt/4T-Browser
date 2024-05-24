@@ -43,6 +43,7 @@ import androidx.viewpager2.adapter.FragmentStateAdapter;
 
 import com.example.a4tbrowser.R;
 import com.example.a4tbrowser.database.MyDatabase;
+import com.example.a4tbrowser.database.MyDbHandler;
 import com.example.a4tbrowser.databinding.ActivityMainBinding;
 import com.example.a4tbrowser.databinding.BookmarkDialogBinding;
 import com.example.a4tbrowser.databinding.MoreFeaturesBinding;
@@ -58,7 +59,9 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
@@ -73,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
     private SwipeRefreshLayout swipeRefreshLayout;
     private WebView webView;
     public int bookmarkIndex = -1;
+    MyDbHandler myDbHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,6 +93,17 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
+        myDbHandler = new MyDbHandler(this, null, null, 1);
+
+        if(getIntent().getStringExtra("url") != null){
+            Bundle bundle = new Bundle();
+//            bundle.getString("url", getIntent().getStringExtra("url"));
+            BrowseFragment fragment = new BrowseFragment(bundle.getString("url", getIntent().getStringExtra("url")));
+            fragment.setArguments(bundle);
+            fragments.add(fragment);
+            binding.myPager.setCurrentItem(fragments.size() - 1);
+
+        }
 
         // Thiết lập sự kiện làm mới (refresh)
         binding.swipe.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
@@ -225,6 +240,13 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(View v) {
                         getOnBackPressedDispatcher().onBackPressed();
+//                        BrowseFragment frag = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
+//                        String tilte = frag.binding.webView.getTitle();
+//                        String url = frag.binding.webView.getUrl();
+//                        String time = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+//                        byte[] image = frag.image();
+//
+//                        frag.save(url, tilte, time, image);
                     }
                 });
                 dialogBinding.btnForward.setOnClickListener(new View.OnClickListener() {
@@ -235,6 +257,13 @@ public class MainActivity extends AppCompatActivity {
                             frag = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
                             if (frag.binding.webView.canGoForward()) {
                                 frag.binding.webView.goForward();
+//                                String tilte = frag.binding.webView.getTitle();
+//                                String url = frag.binding.webView.getUrl();
+//                                String time = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+//                                byte[] image = frag.image();
+//
+//                                frag.save(url, tilte, time, image);
+
                             }
                         }catch (Exception ignored) {}
                     }
@@ -343,8 +372,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
-
-
                 // Ton
                 dialogBinding.btnBookmark.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -378,6 +405,14 @@ public class MainActivity extends AppCompatActivity {
                             }catch (Exception e){}*/
                             openDialog(Gravity.CENTER);
                         }
+                    }
+                });
+
+                dialogBinding.btnHistory.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Intent intent = new Intent(getApplicationContext(), History.class);
+                        startActivity(intent);
                     }
                 });
             }

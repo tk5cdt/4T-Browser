@@ -6,6 +6,7 @@ import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -13,26 +14,32 @@ import android.view.ViewGroup;
 import android.webkit.CookieManager;
 import android.webkit.URLUtil;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebStorage;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import com.example.a4tbrowser.R;
 import com.example.a4tbrowser.activity.MainActivity;
+import com.example.a4tbrowser.database.MyDbHandler;
 import com.example.a4tbrowser.databinding.FragmentBrowseBinding;
+import com.example.a4tbrowser.model.Websites;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 public class BrowseFragment extends Fragment {
     String url;
+    private MyDbHandler myDbHandler;
     public BrowseFragment(String url) {
         this.url = url;
     }
     public FragmentBrowseBinding binding;
     //favicon
-    public Bitmap favicon=null;
-
+    public Bitmap favicon = null;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -40,7 +47,7 @@ public class BrowseFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_browse, container, false);
         binding = FragmentBrowseBinding.bind(view);
-
+        myDbHandler = new MyDbHandler( requireContext(), null, null, 1);
         return view;
     }
 
@@ -64,6 +71,15 @@ public class BrowseFragment extends Fragment {
                     view.zoomOut();
                 }
             }
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                String url = request.getUrl().toString();
+                String title = view.getTitle();
+                byte[] image = image();
+                String timee = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+                save(url, timee, title, image);
+                return super.shouldOverrideUrlLoading(view, request);
+            }
 
             @Override
             public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
@@ -79,12 +95,23 @@ public class BrowseFragment extends Fragment {
                 if(url.contains("you")){
                     activity.binding.getRoot().transitionToEnd();
                 }
+                isPageSaved = false;
+                BrowseFragment.this.favicon = favicon;
             }
-
+            private boolean isPageSaved = false;
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 activity.binding.progressBar.setVisibility(View.GONE);
+
+                if (!isPageSaved) {
+                    activity.binding.getRoot().transitionToStart();
+                    String title = view.getTitle();
+                    String timee = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+                    byte[] image = image();
+                    save(url, timee, title, image);
+                    isPageSaved = true;
+                }
             }
 
         });
@@ -93,23 +120,22 @@ public class BrowseFragment extends Fragment {
             public void onReceivedIcon(WebView view, Bitmap icon) {
                 super.onReceivedIcon(view, icon);
                 try {
+                    Log.d("BrowseFragment", "Received new favicon");
                     activity.binding.webIcon.setImageBitmap(icon);
-                    //activity.binding.
-                    favicon = icon;
-                    if(activity.isBookmark(view.getUrl()) != -1)
-                    {
+                    favicon = icon; // Cập nhật favicon mới nhận được
+                    if (activity.isBookmark(view.getUrl()) != -1) {
                         activity.bookmarkIndex = activity.isBookmark(view.getUrl());
                     }
-                    if(activity.bookmarkIndex != -1)
-                    {
+                    if (activity.bookmarkIndex != -1) {
                         ByteArrayOutputStream a = new ByteArrayOutputStream();
-                        if(icon != null) {
+                        if (icon != null) {
                             icon.compress(Bitmap.CompressFormat.PNG, 100, a);
                             activity.bookmarkList.get(activity.bookmarkIndex).setImg(a.toByteArray());
                         }
                     }
                 }
                 catch (Exception ignored) {
+                    Log.e("BrowseFragment", "Error receiving favicon", ignored);
                 }
             }
 
@@ -153,6 +179,22 @@ public class BrowseFragment extends Fragment {
         });
     }
 
+    public void save(String url, String time, String title, byte[] image)
+    {
+        if (myDbHandler != null) {
+            myDbHandler.addWebsite(new Websites(url, time, image, title));
+        } else {
+            Log.e("BrowseFragment", "myDbHandler is null, cannot save data");
+        }
+    }
+    public byte[] image() {
+        if (favicon == null) {
+            return null;
+        }
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        favicon.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream);
+        return byteArrayOutputStream.toByteArray();
+    }
     @Override
     public void onPause() {
         super.onPause();

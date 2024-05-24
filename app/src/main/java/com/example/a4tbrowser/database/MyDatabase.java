@@ -13,6 +13,7 @@ public abstract class MyDatabase extends RoomDatabase{
     private static final String DATABSE_NAME = "4t_Browser";
 
     public abstract BookmarkDAO bDAO();
+
     private static MyDatabase mDB; // instance
 
     public static MyDatabase getDatabase(Context context)

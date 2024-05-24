@@ -15,4 +15,6 @@ public interface BookmarkDAO {
 
     @Query("select * from bookmark_table")
     List<BookmarkEntity> getListBookmark();
+
+
 }
