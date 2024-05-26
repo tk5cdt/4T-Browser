@@ -12,7 +12,6 @@ import com.example.a4tbrowser.R;
 import com.example.a4tbrowser.adapter.LVBookmarkAdapter;
 import com.example.a4tbrowser.database.MyDatabase;
 import com.example.a4tbrowser.databinding.ActivityBookmarkBinding;
-import com.example.a4tbrowser.databinding.ActivityMainBinding;
 import com.example.a4tbrowser.model.BookmarkEntity;
 
 import java.util.List;
@@ -30,7 +29,7 @@ public class BookmarkActivity extends AppCompatActivity {
         binding = ActivityBookmarkBinding.inflate(getLayoutInflater());
         EdgeToEdge.enable(this);
         setContentView(binding.getRoot());
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.rcview_his), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;

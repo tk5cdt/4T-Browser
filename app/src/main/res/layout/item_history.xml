@@ -6,7 +6,7 @@
     android:layout_height="wrap_content"
     android:gravity="left"
     android:orientation="horizontal"
-    android:padding="10dp">
+    android:padding="8dp">
 
 
     <ImageView
@@ -16,6 +16,7 @@
         android:layout_marginRight="8dp"
         android:gravity="center"
         android:textColor="@color/black"
+        android:layout_gravity="center"
         android:textSize="22sp"
         android:textStyle="bold" />
 
@@ -30,8 +31,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="1dp"
-            android:maxLines="1"
             android:text="Tilte"
+            android:maxLines="1"
             android:textColor="@color/black"
             android:textSize="14sp" />
 
@@ -48,8 +49,9 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:layout_gravity="center"
+        android:gravity="center"
         android:textSize="12sp"
-        android:text="2024-01-01" />
+        android:text="00:00" />
 
     <ImageButton
         android:id="@+id/btndelete"

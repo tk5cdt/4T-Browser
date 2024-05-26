@@ -42,14 +42,15 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
 import com.example.a4tbrowser.R;
+import com.example.a4tbrowser.database.DB_History;
 import com.example.a4tbrowser.database.MyDatabase;
-import com.example.a4tbrowser.database.MyDbHandler;
 import com.example.a4tbrowser.databinding.ActivityMainBinding;
 import com.example.a4tbrowser.databinding.BookmarkDialogBinding;
 import com.example.a4tbrowser.databinding.MoreFeaturesBinding;
 import com.example.a4tbrowser.fragment.BrowseFragment;
 import com.example.a4tbrowser.fragment.HomeFragment;
 import com.example.a4tbrowser.model.BookmarkEntity;
+import com.example.a4tbrowser.model.Websites;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -76,7 +77,9 @@ public class MainActivity extends AppCompatActivity {
     private SwipeRefreshLayout swipeRefreshLayout;
     private WebView webView;
     public int bookmarkIndex = -1;
-    MyDbHandler myDbHandler;
+    DB_History db_history;
+    List<Websites> lswebsites;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,13 +90,12 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.rcview_his), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
-        myDbHandler = new MyDbHandler(this, null, null, 1);
 
         if(getIntent().getStringExtra("url") != null){
             Bundle bundle = new Bundle();
@@ -114,6 +116,19 @@ public class MainActivity extends AppCompatActivity {
                     // Nếu có kết nối internet, load lại link url hiện tại
                     BrowseFragment fragment = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
                     fragment.binding.webView.loadUrl(fragment.binding.webView.getUrl());
+                    // Kiểm tra xem lịch sử đã chứa URL này chưa
+                    lswebsites = DB_History.getDatabase(getApplicationContext()).historyDAO().getAllHistory();
+                    for (Websites website : lswebsites) {
+                        if (fragment.binding.webView.getUrl().equals(website.getUrl())
+                                && fragment.binding.webView.getTitle().equals(website.getTitle())) {
+                            // Nếu đã có, xóa khỏi danh sách lịch sử
+                            lswebsites.remove(website);
+                            String timee = new SimpleDateFormat("hh:mm", Locale.getDefault()).format(new Date());
+                            DB_History.getDatabase(getApplicationContext()).historyDAO().delete(fragment.binding.webView.getUrl(), fragment.binding.webView.getTitle(), timee);
+                            break;
+                        }
+                    }
+                    // Dừng hiệu ứng làm mới
                     binding.swipe.setRefreshing(false);
                 } else {
                     // Nếu không có kết nối internet, hiển thị thông báo

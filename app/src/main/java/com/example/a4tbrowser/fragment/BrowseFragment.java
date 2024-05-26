@@ -21,7 +21,7 @@ import android.webkit.WebViewClient;
 
 import com.example.a4tbrowser.R;
 import com.example.a4tbrowser.activity.MainActivity;
-import com.example.a4tbrowser.database.MyDbHandler;
+import com.example.a4tbrowser.database.DB_History;
 import com.example.a4tbrowser.databinding.FragmentBrowseBinding;
 import com.example.a4tbrowser.model.Websites;
 
@@ -33,7 +33,10 @@ import java.util.Locale;
 
 public class BrowseFragment extends Fragment {
     String url;
-    private MyDbHandler myDbHandler;
+    public BrowseFragment()
+    {
+
+    }
     public BrowseFragment(String url) {
         this.url = url;
     }
@@ -47,7 +50,7 @@ public class BrowseFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_browse, container, false);
         binding = FragmentBrowseBinding.bind(view);
-        myDbHandler = new MyDbHandler( requireContext(), null, null, 1);
+
         return view;
     }
 
@@ -73,11 +76,12 @@ public class BrowseFragment extends Fragment {
             }
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                String url = request.getUrl().toString();
-                String title = view.getTitle();
-                byte[] image = image();
-                String timee = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
-                save(url, timee, title, image);
+//                String url = request.getUrl().toString();
+//                String title = view.getTitle();
+//                byte[] image = image();
+//                String timee = new SimpleDateFormat("hh:mm", Locale.getDefault()).format(new Date());
+//                String date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+                //save(url, title, timee, image, date);
                 return super.shouldOverrideUrlLoading(view, request);
             }
 
@@ -107,9 +111,10 @@ public class BrowseFragment extends Fragment {
                 if (!isPageSaved) {
                     activity.binding.getRoot().transitionToStart();
                     String title = view.getTitle();
-                    String timee = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+                    String timee = new SimpleDateFormat("hh:mm", Locale.getDefault()).format(new Date());
                     byte[] image = image();
-                    save(url, timee, title, image);
+                    String date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+                    save(url, title, timee, image, date);
                     isPageSaved = true;
                 }
             }
@@ -179,13 +184,10 @@ public class BrowseFragment extends Fragment {
         });
     }
 
-    public void save(String url, String time, String title, byte[] image)
+    public void save(String url, String title, String time, byte[] image, String date)
     {
-        if (myDbHandler != null) {
-            myDbHandler.addWebsite(new Websites(url, time, image, title));
-        } else {
-            Log.e("BrowseFragment", "myDbHandler is null, cannot save data");
-        }
+        DB_History.getDatabase(requireContext()).historyDAO().addHistory(new Websites(url, image, title, time, date));
+
     }
     public byte[] image() {
         if (favicon == null) {
