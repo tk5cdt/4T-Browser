@@ -18,12 +18,15 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebStorage;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.ImageView;
 
 import com.example.a4tbrowser.R;
 import com.example.a4tbrowser.activity.MainActivity;
 import com.example.a4tbrowser.database.DB_History;
+import com.example.a4tbrowser.databinding.ActivityMainBinding;
 import com.example.a4tbrowser.databinding.FragmentBrowseBinding;
 import com.example.a4tbrowser.model.Websites;
+import com.google.android.material.imageview.ShapeableImageView;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
@@ -33,6 +36,7 @@ import java.util.Locale;
 
 public class BrowseFragment extends Fragment {
     String url;
+    public ActivityMainBinding activityMainBinding;
     public BrowseFragment()
     {
 
@@ -74,16 +78,16 @@ public class BrowseFragment extends Fragment {
                     view.zoomOut();
                 }
             }
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-//                String url = request.getUrl().toString();
-//                String title = view.getTitle();
-//                byte[] image = image();
-//                String timee = new SimpleDateFormat("hh:mm", Locale.getDefault()).format(new Date());
-//                String date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
-                //save(url, title, timee, image, date);
-                return super.shouldOverrideUrlLoading(view, request);
-            }
+//            @Override
+//            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+////                String url = request.getUrl().toString();
+////                String title = view.getTitle();
+////                byte[] image = image();
+////                String timee = new SimpleDateFormat("hh:mm", Locale.getDefault()).format(new Date());
+////                String date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+//                //save(url, title, timee, image, date);
+//                return super.shouldOverrideUrlLoading(view, request);
+//            }
 
             @Override
             public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
@@ -96,31 +100,28 @@ public class BrowseFragment extends Fragment {
                 super.onPageStarted(view, url, favicon);
                 activity.binding.progressBar.setProgress(0);
                 activity.binding.progressBar.setVisibility(View.VISIBLE);
+
                 if(url.contains("you")){
                     activity.binding.getRoot().transitionToEnd();
                 }
+
                 isPageSaved = false;
-                BrowseFragment.this.favicon = favicon;
+                BrowseFragment.this.favicon = activity.binding.webIcon.getDrawingCache();
+
             }
+
             private boolean isPageSaved = false;
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 activity.binding.progressBar.setVisibility(View.GONE);
 
-                if (!isPageSaved) {
-                    activity.binding.getRoot().transitionToStart();
-                    String title = view.getTitle();
-                    String timee = new SimpleDateFormat("hh:mm", Locale.getDefault()).format(new Date());
-                    byte[] image = image();
-                    String date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
-                    save(url, title, timee, image, date);
-                    isPageSaved = true;
-                }
+
             }
 
         });
         binding.webView.setWebChromeClient(new WebChromeClient(){
+            private boolean isPageSaved = false;
             @Override
             public void onReceivedIcon(WebView view, Bitmap icon) {
                 super.onReceivedIcon(view, icon);
@@ -128,6 +129,7 @@ public class BrowseFragment extends Fragment {
                     Log.d("BrowseFragment", "Received new favicon");
                     activity.binding.webIcon.setImageBitmap(icon);
                     favicon = icon; // Cập nhật favicon mới nhận được
+
                     if (activity.isBookmark(view.getUrl()) != -1) {
                         activity.bookmarkIndex = activity.isBookmark(view.getUrl());
                     }
@@ -138,11 +140,23 @@ public class BrowseFragment extends Fragment {
                             activity.bookmarkList.get(activity.bookmarkIndex).setImg(a.toByteArray());
                         }
                     }
+
+                    if (!isPageSaved) {
+                        activity.binding.getRoot().transitionToStart();
+                        String url = activity.binding.topSearchBar.getText().toString();
+                        String title = view.getTitle();
+                        String timee = new SimpleDateFormat("hh:mm", Locale.getDefault()).format(new Date());
+                        byte[] image = image();
+                        String date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+                        save(url, title, timee, image, date);
+                        isPageSaved = true;
+                    }
                 }
                 catch (Exception ignored) {
                     Log.e("BrowseFragment", "Error receiving favicon", ignored);
                 }
             }
+
 
             @Override
             public void onShowCustomView(View view, CustomViewCallback callback) {
@@ -189,8 +203,25 @@ public class BrowseFragment extends Fragment {
         DB_History.getDatabase(requireContext()).historyDAO().addHistory(new Websites(url, image, title, time, date));
 
     }
+    public void loadIcon(String url)
+    {
+        if(url.contains("you"))
+        {
+            MainActivity activity = (MainActivity) requireActivity();
+            activity.binding.webIcon.setImageBitmap(favicon);
+            activity.binding.webIcon.setVisibility(View.VISIBLE);
+            activity.binding.webIcon.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    activity.binding.getRoot().transitionToStart();
+                    activity.binding.webIcon.setVisibility(View.GONE);
+                    binding.webView.setVisibility(View.VISIBLE);
+                }
+            });
+        }
+    }
     public byte[] image() {
-        if (favicon == null) {
+        if (BrowseFragment.this.favicon == null) {
             return null;
         }
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
