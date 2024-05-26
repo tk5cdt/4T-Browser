@@ -77,7 +77,6 @@ public class MainActivity extends AppCompatActivity {
     private SwipeRefreshLayout swipeRefreshLayout;
     private WebView webView;
     public int bookmarkIndex = -1;
-    DB_History db_history;
     List<Websites> lswebsites;
 
 
@@ -99,12 +98,10 @@ public class MainActivity extends AppCompatActivity {
 
         if(getIntent().getStringExtra("url") != null){
             Bundle bundle = new Bundle();
-//            bundle.getString("url", getIntent().getStringExtra("url"));
             BrowseFragment fragment = new BrowseFragment(bundle.getString("url", getIntent().getStringExtra("url")));
             fragment.setArguments(bundle);
             fragments.add(fragment);
             binding.myPager.setCurrentItem(fragments.size() - 1);
-
         }
 
         // Thiết lập sự kiện làm mới (refresh)

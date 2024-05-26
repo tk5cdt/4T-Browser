@@ -78,16 +78,6 @@ public class BrowseFragment extends Fragment {
                     view.zoomOut();
                 }
             }
-//            @Override
-//            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-////                String url = request.getUrl().toString();
-////                String title = view.getTitle();
-////                byte[] image = image();
-////                String timee = new SimpleDateFormat("hh:mm", Locale.getDefault()).format(new Date());
-////                String date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
-//                //save(url, title, timee, image, date);
-//                return super.shouldOverrideUrlLoading(view, request);
-//            }
 
             @Override
             public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {

@@ -13,26 +13,25 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
-import com.example.a4tbrowser.adapter.his_adapter;
+import com.example.a4tbrowser.adapter.HistoryAdapter;
 import com.example.a4tbrowser.database.DB_History;
 import com.example.a4tbrowser.model.Websites;
 import com.example.a4tbrowser.R;
 import com.example.a4tbrowser.databinding.ActivityHistoryBinding;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
 public class History extends AppCompatActivity {
 
-    PrintJob printJob;
-    Boolean fullScreen = true;
-    public static Boolean desktopMode = false;
     public ActivityHistoryBinding bindingHis;
     List<Websites> lswebsites;
-//    HistoryAdapter historyAdapter;
-    public his_adapter hisAdapter;
+    public HistoryAdapter hisAdapter;
 
 
     @Override
@@ -56,33 +55,25 @@ public class History extends AppCompatActivity {
         if (lswebsites == null) {
             lswebsites = new ArrayList<>();
         }
-//        historyAdapter = new HistoryAdapter(this, lswebsites);
-//        bindingHis.lvHistory.setAdapter(historyAdapter);
-//
-//
-//        if (lswebsites.size() <= 0) {
-//            // Hiển thị 1 textview Today trước khi load lvhistory
-//            bindingHis.lvHistory.setDivider(null);
-//        }
-
+        // sắp xếp theo thời gian
+        Collections.sort(lswebsites, new Comparator<Websites>() {
+            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
+            @Override
+            public int compare(Websites o1, Websites o2) {
+                try {
+                    return sdf.parse(o2.getTimee()).compareTo(sdf.parse(o1.getTimee()));
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+                return 0;
+            }
+        });
         List<Object> items = prepareHistoryData(lswebsites);
-        hisAdapter = new his_adapter(this, items);
+        hisAdapter = new HistoryAdapter(this, items);
         bindingHis.recyclerView.setLayoutManager(new LinearLayoutManager(this));
         bindingHis.recyclerView.setAdapter(hisAdapter);
 
-//        bindingHis.items.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//            @Override
-//            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-//                String url = lswebsites.get(position).getUrl();
-//                Intent intent = new Intent(view.getContext(), MainActivity.class);
-//                intent.putExtra("url", url);
-//                startActivity(intent);
-//                finish();
-//            }
-//
-//        });
-
-        hisAdapter.setWebsiteClickListener(new his_adapter.OnWebsiteClickListener() {
+        hisAdapter.setWebsiteClickListener(new HistoryAdapter.OnWebsiteClickListener() {
             @Override
             public void onWebsiteClick(Websites website) {
                 String url = website.getUrl();
@@ -94,7 +85,7 @@ public class History extends AppCompatActivity {
         });
 
 
-        hisAdapter.setDeleteClickListener(new his_adapter.OnDeleteClickListener() {
+        hisAdapter.setDeleteClickListener(new HistoryAdapter.OnDeleteClickListener() {
             @Override
             public void onDeleteClick(Websites website) {
                 DB_History.getDatabase(getApplicationContext()).historyDAO().delete(website.getUrl(), website.getTitle(), website.getTimee());
