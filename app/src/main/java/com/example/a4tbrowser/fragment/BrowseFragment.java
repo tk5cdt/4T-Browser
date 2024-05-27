@@ -6,6 +6,7 @@ import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -13,26 +14,39 @@ import android.view.ViewGroup;
 import android.webkit.CookieManager;
 import android.webkit.URLUtil;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebStorage;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.ImageView;
 
 import com.example.a4tbrowser.R;
 import com.example.a4tbrowser.activity.MainActivity;
+import com.example.a4tbrowser.database.DB_History;
+import com.example.a4tbrowser.databinding.ActivityMainBinding;
 import com.example.a4tbrowser.databinding.FragmentBrowseBinding;
+import com.example.a4tbrowser.model.Websites;
+import com.google.android.material.imageview.ShapeableImageView;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 public class BrowseFragment extends Fragment {
     String url;
+    public ActivityMainBinding activityMainBinding;
+    public BrowseFragment()
+    {
+
+    }
     public BrowseFragment(String url) {
         this.url = url;
     }
     public FragmentBrowseBinding binding;
     //favicon
-    public Bitmap favicon=null;
-
+    public Bitmap favicon = null;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -76,42 +90,63 @@ public class BrowseFragment extends Fragment {
                 super.onPageStarted(view, url, favicon);
                 activity.binding.progressBar.setProgress(0);
                 activity.binding.progressBar.setVisibility(View.VISIBLE);
+
                 if(url.contains("you")){
                     activity.binding.getRoot().transitionToEnd();
                 }
+
+                isPageSaved = false;
+                BrowseFragment.this.favicon = activity.binding.webIcon.getDrawingCache();
+
             }
 
+            private boolean isPageSaved = false;
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 activity.binding.progressBar.setVisibility(View.GONE);
+
+
             }
 
         });
         binding.webView.setWebChromeClient(new WebChromeClient(){
+            private boolean isPageSaved = false;
             @Override
             public void onReceivedIcon(WebView view, Bitmap icon) {
                 super.onReceivedIcon(view, icon);
                 try {
+                    Log.d("BrowseFragment", "Received new favicon");
                     activity.binding.webIcon.setImageBitmap(icon);
-                    //activity.binding.
-                    favicon = icon;
-                    if(activity.isBookmark(view.getUrl()) != -1)
-                    {
+                    favicon = icon; // Cập nhật favicon mới nhận được
+
+                    if (activity.isBookmark(view.getUrl()) != -1) {
                         activity.bookmarkIndex = activity.isBookmark(view.getUrl());
                     }
-                    if(activity.bookmarkIndex != -1)
-                    {
+                    if (activity.bookmarkIndex != -1) {
                         ByteArrayOutputStream a = new ByteArrayOutputStream();
-                        if(icon != null) {
+                        if (icon != null) {
                             icon.compress(Bitmap.CompressFormat.PNG, 100, a);
                             activity.bookmarkList.get(activity.bookmarkIndex).setImg(a.toByteArray());
                         }
                     }
+
+                    if (!isPageSaved) {
+                        activity.binding.getRoot().transitionToStart();
+                        String url = activity.binding.topSearchBar.getText().toString();
+                        String title = view.getTitle();
+                        String timee = new SimpleDateFormat("hh:mm", Locale.getDefault()).format(new Date());
+                        byte[] image = image();
+                        String date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+                        save(url, title, timee, image, date);
+                        isPageSaved = true;
+                    }
                 }
                 catch (Exception ignored) {
+                    Log.e("BrowseFragment", "Error receiving favicon", ignored);
                 }
             }
+
 
             @Override
             public void onShowCustomView(View view, CustomViewCallback callback) {
@@ -153,6 +188,36 @@ public class BrowseFragment extends Fragment {
         });
     }
 
+    public void save(String url, String title, String time, byte[] image, String date)
+    {
+        DB_History.getDatabase(requireContext()).historyDAO().addHistory(new Websites(url, image, title, time, date));
+
+    }
+    public void loadIcon(String url)
+    {
+        if(url.contains("you"))
+        {
+            MainActivity activity = (MainActivity) requireActivity();
+            activity.binding.webIcon.setImageBitmap(favicon);
+            activity.binding.webIcon.setVisibility(View.VISIBLE);
+            activity.binding.webIcon.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    activity.binding.getRoot().transitionToStart();
+                    activity.binding.webIcon.setVisibility(View.GONE);
+                    binding.webView.setVisibility(View.VISIBLE);
+                }
+            });
+        }
+    }
+    public byte[] image() {
+        if (BrowseFragment.this.favicon == null) {
+            return null;
+        }
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        favicon.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream);
+        return byteArrayOutputStream.toByteArray();
+    }
     @Override
     public void onPause() {
         super.onPause();

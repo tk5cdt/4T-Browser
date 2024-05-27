@@ -42,6 +42,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
 import com.example.a4tbrowser.R;
+import com.example.a4tbrowser.database.DB_History;
 import com.example.a4tbrowser.database.MyDatabase;
 import com.example.a4tbrowser.databinding.ActivityMainBinding;
 import com.example.a4tbrowser.databinding.BookmarkDialogBinding;
@@ -49,6 +50,7 @@ import com.example.a4tbrowser.databinding.MoreFeaturesBinding;
 import com.example.a4tbrowser.fragment.BrowseFragment;
 import com.example.a4tbrowser.fragment.HomeFragment;
 import com.example.a4tbrowser.model.BookmarkEntity;
+import com.example.a4tbrowser.model.Websites;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -58,7 +60,9 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
@@ -73,6 +77,8 @@ public class MainActivity extends AppCompatActivity {
     private SwipeRefreshLayout swipeRefreshLayout;
     private WebView webView;
     public int bookmarkIndex = -1;
+    List<Websites> lswebsites;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,12 +89,20 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.rcview_his), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
+
+        if(getIntent().getStringExtra("url") != null){
+            Bundle bundle = new Bundle();
+            BrowseFragment fragment = new BrowseFragment(bundle.getString("url", getIntent().getStringExtra("url")));
+            fragment.setArguments(bundle);
+            fragments.add(fragment);
+            binding.myPager.setCurrentItem(fragments.size() - 1);
+        }
 
         // Thiết lập sự kiện làm mới (refresh)
         binding.swipe.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
@@ -99,6 +113,19 @@ public class MainActivity extends AppCompatActivity {
                     // Nếu có kết nối internet, load lại link url hiện tại
                     BrowseFragment fragment = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
                     fragment.binding.webView.loadUrl(fragment.binding.webView.getUrl());
+                    // Kiểm tra xem lịch sử đã chứa URL này chưa
+                    lswebsites = DB_History.getDatabase(getApplicationContext()).historyDAO().getAllHistory();
+                    for (Websites website : lswebsites) {
+                        if (fragment.binding.webView.getUrl().equals(website.getUrl())
+                                && fragment.binding.webView.getTitle().equals(website.getTitle())) {
+                            // Nếu đã có, xóa khỏi danh sách lịch sử
+                            lswebsites.remove(website);
+                            String timee = new SimpleDateFormat("hh:mm", Locale.getDefault()).format(new Date());
+                            DB_History.getDatabase(getApplicationContext()).historyDAO().delete(fragment.binding.webView.getUrl(), fragment.binding.webView.getTitle(), timee);
+                            break;
+                        }
+                    }
+                    // Dừng hiệu ứng làm mới
                     binding.swipe.setRefreshing(false);
                 } else {
                     // Nếu không có kết nối internet, hiển thị thông báo
@@ -225,6 +252,13 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(View v) {
                         getOnBackPressedDispatcher().onBackPressed();
+//                        BrowseFragment frag = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
+//                        String tilte = frag.binding.webView.getTitle();
+//                        String url = frag.binding.webView.getUrl();
+//                        String time = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+//                        byte[] image = frag.image();
+//
+//                        frag.save(url, tilte, time, image);
                     }
                 });
                 dialogBinding.btnForward.setOnClickListener(new View.OnClickListener() {
@@ -235,6 +269,13 @@ public class MainActivity extends AppCompatActivity {
                             frag = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
                             if (frag.binding.webView.canGoForward()) {
                                 frag.binding.webView.goForward();
+//                                String tilte = frag.binding.webView.getTitle();
+//                                String url = frag.binding.webView.getUrl();
+//                                String time = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+//                                byte[] image = frag.image();
+//
+//                                frag.save(url, tilte, time, image);
+
                             }
                         }catch (Exception ignored) {}
                     }
@@ -343,8 +384,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
-
-
                 // Ton
                 dialogBinding.btnBookmark.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -378,6 +417,14 @@ public class MainActivity extends AppCompatActivity {
                             }catch (Exception e){}*/
                             openDialog(Gravity.CENTER);
                         }
+                    }
+                });
+
+                dialogBinding.btnHistory.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Intent intent = new Intent(getApplicationContext(), History.class);
+                        startActivity(intent);
                     }
                 });
             }

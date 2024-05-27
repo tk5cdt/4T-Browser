@@ -116,16 +116,17 @@
             app:iconTint="@color/black" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnDownload"
+            android:id="@+id/btnHistory"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:background="?attr/selectableItemBackground"
-            android:text="Download"
+            android:text="@string/history"
             android:textColor="@android:color/black"
-            app:icon="@drawable/baseline_file_download_24"
+            app:icon="@drawable/history"
             app:iconGravity="top"
             app:iconTint="@color/black" />
+
     </LinearLayout>
 
 </LinearLayout>
