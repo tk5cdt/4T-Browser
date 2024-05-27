@@ -41,7 +41,6 @@ public class History extends AppCompatActivity {
         setContentView(R.layout.activity_history);
         bindingHis = ActivityHistoryBinding.inflate(getLayoutInflater());
 
-
         setContentView(bindingHis.getRoot());
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.tvHistory), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -49,25 +48,30 @@ public class History extends AppCompatActivity {
             return insets;
         });
 
-
         lswebsites = DB_History.getDatabase(this).historyDAO().getAllHistory();
 
         if (lswebsites == null) {
             lswebsites = new ArrayList<>();
         }
-        // sắp xếp theo thời gian
-        Collections.sort(lswebsites, new Comparator<Websites>() {
-            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
-            @Override
-            public int compare(Websites o1, Websites o2) {
-                try {
-                    return sdf.parse(o2.getTimee()).compareTo(sdf.parse(o1.getTimee()));
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
-                return 0;
-            }
-        });
+
+//        // Sắp xếp danh sách theo thời gian
+//        Collections.sort(lswebsites, new Comparator<Websites>() {
+//            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+//
+//            @Override
+//            public int compare(Websites o1, Websites o2) {
+//                try {
+//                    return sdf.parse(o2.getTimee()).compareTo(sdf.parse(o1.getTimee()));
+//                } catch (ParseException e) {
+//                    e.printStackTrace();
+//                }
+//                return 0;
+//            }
+//        });
+
+        // Đảo ngược danh sách để mục mới nhất ở trên cùng
+        lswebsites = reverseWebsites(lswebsites);
+
         List<Object> items = prepareHistoryData(lswebsites);
         hisAdapter = new HistoryAdapter(this, items);
         bindingHis.recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -95,6 +99,10 @@ public class History extends AppCompatActivity {
 
             }
         });
+    }
+    private List<Websites> reverseWebsites(List<Websites> websites) {
+        Collections.reverse(websites);
+        return websites;
     }
     private List<Object> prepareHistoryData(List<Websites> websites) {
         List<Object> items = new ArrayList<>();
