@@ -75,7 +75,7 @@ import java.util.Locale;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
-    public static List<Fragment> fragments = new ArrayList<>();
+    List<Fragment> fragments = new ArrayList<>();
     public List<BookmarkEntity> bookmarkList = new ArrayList<>();
     public static ArrayList<Tab> tabsList = new ArrayList<>();
     public ActivityMainBinding binding;
@@ -109,13 +109,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-        if(getIntent().getStringExtra("url") != null){
-            Bundle bundle = new Bundle();
-            BrowseFragment fragment = new BrowseFragment(bundle.getString("url", getIntent().getStringExtra("url")));
-            fragment.setArguments(bundle);
-            fragments.add(fragment);
-            binding.myPager.setCurrentItem(fragments.size() - 1);
-        }
+
 
 
         tabsList.add(new Tab("Home", new HomeFragment()));
@@ -128,7 +122,14 @@ public class MainActivity extends AppCompatActivity {
 
         initView();
         changeFullScreen(true);
-
+        if(getIntent().getStringExtra("url") != null){
+            Bundle bundle = new Bundle();
+//            BrowseFragment fragment = new BrowseFragment(bundle.getString("url", getIntent().getStringExtra("url")));
+//            fragment.setArguments(bundle);
+//            fragments.add(fragment);
+//            binding.myPager.setCurrentItem(fragments.size() - 1);
+            changeTab(bundle.getString("url", getIntent().getStringExtra("url")), new BrowseFragment(bundle.getString("url", getIntent().getStringExtra("url"))));
+        }
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @SuppressLint("NotifyDataSetChanged")
             @Override
@@ -188,7 +189,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private static class TabAdapter extends FragmentStateAdapter {
+    private class TabAdapter extends FragmentStateAdapter {
         public TabAdapter(@NonNull FragmentManager fragmentManager, Lifecycle lifecycle) {
             super(fragmentManager, lifecycle);
         }
@@ -196,7 +197,8 @@ public class MainActivity extends AppCompatActivity {
         @NonNull
         @Override
         public Fragment createFragment(int position) {
-            return tabsList.get(position).getFragment();
+//            return tabsList.get(position).getFragment();
+            return fragments.get(position);
         }
 
         @Override
