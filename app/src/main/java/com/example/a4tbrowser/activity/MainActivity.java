@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
@@ -30,6 +31,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
@@ -38,21 +40,27 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.Lifecycle;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
+import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.a4tbrowser.R;
+import com.example.a4tbrowser.adapter.TabAdapter;
 import com.example.a4tbrowser.database.DB_History;
 import com.example.a4tbrowser.database.MyDatabase;
 import com.example.a4tbrowser.databinding.ActivityMainBinding;
 import com.example.a4tbrowser.databinding.BookmarkDialogBinding;
 import com.example.a4tbrowser.databinding.MoreFeaturesBinding;
+import com.example.a4tbrowser.databinding.TabsViewBinding;
 import com.example.a4tbrowser.fragment.BrowseFragment;
 import com.example.a4tbrowser.fragment.HomeFragment;
 import com.example.a4tbrowser.model.BookmarkEntity;
+import com.example.a4tbrowser.model.Tab;
 import com.example.a4tbrowser.model.Websites;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.textview.MaterialTextView;
 
 import java.io.ByteArrayOutputStream;
 import java.net.MalformedURLException;
@@ -66,8 +74,9 @@ import java.util.Locale;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
-    List<Fragment> fragments = new ArrayList<>();
+    public static List<Fragment> fragments = new ArrayList<>();
     public List<BookmarkEntity> bookmarkList = new ArrayList<>();
+    public static ArrayList<Tab> tabsList = new ArrayList<>();
     public ActivityMainBinding binding;
     PrintJob printJob;
     Boolean fullScreen = true;
@@ -78,6 +87,9 @@ public class MainActivity extends AppCompatActivity {
     private WebView webView;
     public int bookmarkIndex = -1;
     List<Websites> lswebsites;
+
+    public static ViewPager2 myPager;
+    public static MaterialTextView tabsBtn;
 
 
     @Override
@@ -104,41 +116,15 @@ public class MainActivity extends AppCompatActivity {
             binding.myPager.setCurrentItem(fragments.size() - 1);
         }
 
-        // Thiết lập sự kiện làm mới (refresh)
-        binding.swipe.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                // Kiểm tra kết nối internet trước khi làm mới
-                if (isNetworkAvailable()) {
-                    // Nếu có kết nối internet, load lại link url hiện tại
-                    BrowseFragment fragment = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
-                    fragment.binding.webView.loadUrl(fragment.binding.webView.getUrl());
-                    // Kiểm tra xem lịch sử đã chứa URL này chưa
-                    lswebsites = DB_History.getDatabase(getApplicationContext()).historyDAO().getAllHistory();
-                    for (Websites website : lswebsites) {
-                        if (fragment.binding.webView.getUrl().equals(website.getUrl())
-                                && fragment.binding.webView.getTitle().equals(website.getTitle())) {
-                            // Nếu đã có, xóa khỏi danh sách lịch sử
-                            lswebsites.remove(website);
-                            String timee = new SimpleDateFormat("hh:mm", Locale.getDefault()).format(new Date());
-                            DB_History.getDatabase(getApplicationContext()).historyDAO().delete(fragment.binding.webView.getUrl(), fragment.binding.webView.getTitle(), timee);
-                            break;
-                        }
-                    }
-                    // Dừng hiệu ứng làm mới
-                    binding.swipe.setRefreshing(false);
-                } else {
-                    // Nếu không có kết nối internet, hiển thị thông báo
-                    showMessage("No internet connection");
-                    // Dừng hiệu ứng làm mới
-                    binding.swipe.setRefreshing(false);
-                }
-            }
-        });
 
+        tabsList.add(new Tab("Home", new HomeFragment()));
         binding.myPager.setAdapter(new TabAdapter(getSupportFragmentManager(), getLifecycle()));
         binding.myPager.setUserInputEnabled(false);
         fragments.add(new HomeFragment());
+
+        myPager = binding.myPager;
+        tabsBtn=binding.tabsBtn;
+
         initView();
         changeFullScreen(true);
 
@@ -146,21 +132,41 @@ public class MainActivity extends AppCompatActivity {
             @SuppressLint("NotifyDataSetChanged")
             @Override
             public void handleOnBackPressed() {
-                BrowseFragment fragment;
+//                BrowseFragment fragment;
+//                try {
+//                    fragment = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
+//                    if (fragment.binding.webView.canGoBack()) {
+//                        fragment.binding.webView.goBack();
+//                        return;
+//                    }
+//                } catch (Exception ignored) {
+//                }
+//                if (binding.myPager.getCurrentItem() == 0) {
+//                    finish();
+//                } else {
+//                    fragments.remove(binding.myPager.getCurrentItem());
+//                    Objects.requireNonNull(binding.myPager.getAdapter()).notifyDataSetChanged();
+//                    binding.myPager.setCurrentItem(fragments.size() - 1);
+//                }
+//            }
+                Fragment frag;
                 try {
-                    fragment = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
-                    if (fragment.binding.webView.canGoBack()) {
-                        fragment.binding.webView.goBack();
-                        return;
-                    }
-                } catch (Exception ignored) {
+                    frag = tabsList.get(binding.myPager.getCurrentItem()).getFragment()      ;
+                } catch (Exception e) {
+                    return;
                 }
+
+                if (frag != null && frag.getView() != null && ((BrowseFragment) frag).binding.webView.canGoBack()) {
+                    ((BrowseFragment) frag).binding.webView.goBack();
+                    return;
+                }
+
                 if (binding.myPager.getCurrentItem() == 0) {
                     finish();
                 } else {
-                    fragments.remove(binding.myPager.getCurrentItem());
-                    Objects.requireNonNull(binding.myPager.getAdapter()).notifyDataSetChanged();
-                    binding.myPager.setCurrentItem(fragments.size() - 1);
+                    tabsList.remove(binding.myPager.getCurrentItem());
+                    binding.myPager.getAdapter().notifyDataSetChanged();
+                    binding.myPager.setCurrentItem(tabsList.size() - 1);
                 }
             }
         });
@@ -181,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private class TabAdapter extends FragmentStateAdapter {
+    private static class TabAdapter extends FragmentStateAdapter {
         public TabAdapter(@NonNull FragmentManager fragmentManager, Lifecycle lifecycle) {
             super(fragmentManager, lifecycle);
         }
@@ -189,7 +195,7 @@ public class MainActivity extends AppCompatActivity {
         @NonNull
         @Override
         public Fragment createFragment(int position) {
-            return fragments.get(position);
+            return tabsList.get(position).getFragment();
         }
 
         @Override
@@ -201,9 +207,14 @@ public class MainActivity extends AppCompatActivity {
     @SuppressLint("NotifyDataSetChanged")
     public void changeTab(String url, Fragment fragment) {
         fragments.add(fragment);
+        tabsList.add(new Tab(url, fragment));
         Objects.requireNonNull(binding.myPager.getAdapter()).notifyDataSetChanged();
-        binding.myPager.setCurrentItem(fragments.size() - 1);
+        //binding.myPager.setCurrentItem(fragments.size() - 1);
+        binding.myPager.setCurrentItem(tabsList.size() - 1);
+        tabsBtn.setText(String.valueOf(tabsList.size()));
     }
+
+
 
     @SuppressLint("ObsoleteSdkInt")
     public boolean checkForInternet(Context context) {
@@ -223,8 +234,44 @@ public class MainActivity extends AppCompatActivity {
         return isAvailable;
     }
 
-    void initView(){
 
+    void initView(){
+        binding.tabsBtn.setOnClickListener(v -> {
+            View viewTabs = getLayoutInflater().inflate(R.layout.tabs_view, binding.getRoot(), false);
+            TabsViewBinding bindingTabs = TabsViewBinding.bind(viewTabs);
+
+            MaterialAlertDialogBuilder dialogTabsBuilder = new MaterialAlertDialogBuilder(this, R.style.roundCornerDialog)
+                    .setView(viewTabs)
+                    .setTitle("Select Tab")
+                    .setPositiveButton("Home", (self, which) -> {
+                        changeTab("Home", new HomeFragment());
+                        self.dismiss();
+                    })
+                    .setNeutralButton("Google", (self, which) -> {
+                        changeTab("Google", new BrowseFragment("www.google.com"));
+                        self.dismiss();
+                    });
+
+            AlertDialog dialogTabs = dialogTabsBuilder.create();
+
+            bindingTabs.tabsRV.setHasFixedSize(true);
+            bindingTabs.tabsRV.setLayoutManager(new LinearLayoutManager(this));
+            bindingTabs.tabsRV.setAdapter(new com.example.a4tbrowser.adapter.TabAdapter(this, dialogTabs));
+
+            dialogTabs.show();
+
+            Button pBtn = dialogTabs.getButton(AlertDialog.BUTTON_POSITIVE);
+            Button nBtn = dialogTabs.getButton(AlertDialog.BUTTON_NEUTRAL);
+
+            pBtn.setAllCaps(false);
+            nBtn.setAllCaps(false);
+
+            pBtn.setTextColor(Color.BLACK);
+            nBtn.setTextColor(Color.BLACK);
+
+            pBtn.setCompoundDrawablesWithIntrinsicBounds(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_home, getTheme()), null, null, null);
+            nBtn.setCompoundDrawablesWithIntrinsicBounds(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_add, getTheme()), null, null, null);
+        });
         binding.settingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

@@ -1,5 +1,9 @@
 package com.example.a4tbrowser.fragment;
 
+import static com.example.a4tbrowser.activity.MainActivity.myPager;
+import static com.example.a4tbrowser.activity.MainActivity.tabsBtn;
+import static com.example.a4tbrowser.activity.MainActivity.tabsList;
+
 import android.content.Intent;
 import android.os.Bundle;
 
@@ -42,6 +46,15 @@ public class HomeFragment extends Fragment {
         super.onResume();
 
         MainActivity activity = (MainActivity) requireActivity();
+
+        tabsBtn.setText(String.valueOf(tabsList.size()));
+
+
+            tabsBtn.setText(String.valueOf(tabsList.size()));
+            MainActivity.tabsList.get(myPager.getCurrentItem()).setName("Home");
+
+
+
 
         activity.binding.topSearchBar.setText(null);
         activity.binding.webIcon.setImageResource(R.drawable.baseline_search_24);

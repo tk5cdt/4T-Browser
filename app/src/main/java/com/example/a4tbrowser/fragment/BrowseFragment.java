@@ -1,7 +1,11 @@
 package com.example.a4tbrowser.fragment;
 
+import static com.example.a4tbrowser.activity.MainActivity.tabsBtn;
+
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
@@ -12,6 +16,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.CookieManager;
+import android.webkit.DownloadListener;
 import android.webkit.URLUtil;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -63,6 +68,23 @@ public class BrowseFragment extends Fragment {
     public void onResume() {
         super.onResume();
         MainActivity activity = (MainActivity) requireActivity();
+
+
+            MainActivity.tabsList.get(MainActivity.myPager.getCurrentItem()).setName(binding.webView.getUrl());
+
+
+        binding.webView.setDownloadListener(new DownloadListener() {
+            @Override
+            public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimeType, long contentLength) {
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setData(Uri.parse(url));
+                startActivity(intent);
+            }
+        });
+
+
+
+
         binding.webView.getSettings().setJavaScriptEnabled(true);
         binding.webView.getSettings().setDomStorageEnabled(true);
         binding.webView.getSettings().setSupportZoom(true);
@@ -83,6 +105,14 @@ public class BrowseFragment extends Fragment {
             public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
                 super.doUpdateVisitedHistory(view, url, isReload);
                 activity.binding.topSearchBar.setText(url);
+
+                if (activity.myPager != null) {
+                    MainActivity.tabsList.get(MainActivity.myPager.getCurrentItem()).setName(binding.webView.getUrl().toString());
+                }
+
+
+
+
             }
 
             @Override
