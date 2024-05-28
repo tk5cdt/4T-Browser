@@ -3,14 +3,18 @@ package com.example.a4tbrowser.activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.print.PrintJob;
+import android.view.View;
 import android.widget.Toast;
 
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.a4tbrowser.adapter.HistoryAdapter;
@@ -42,32 +46,21 @@ public class History extends AppCompatActivity {
         bindingHis = ActivityHistoryBinding.inflate(getLayoutInflater());
 
         setContentView(bindingHis.getRoot());
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.tvHistory), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+        Intent intent = getIntent();
+        boolean fullScreen = intent.getBooleanExtra("full", true);
+        if(fullScreen != true){
+            changeFullScreen(false);
+        }
+        else{
+            bindingHis.linearLayoutHistory.setPadding(0, 80, 0, 0);
 
+        }
         lswebsites = DB_History.getDatabase(this).historyDAO().getAllHistory();
 
         if (lswebsites == null) {
             lswebsites = new ArrayList<>();
         }
 
-//        // Sắp xếp danh sách theo thời gian
-//        Collections.sort(lswebsites, new Comparator<Websites>() {
-//            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-//
-//            @Override
-//            public int compare(Websites o1, Websites o2) {
-//                try {
-//                    return sdf.parse(o2.getTimee()).compareTo(sdf.parse(o1.getTimee()));
-//                } catch (ParseException e) {
-//                    e.printStackTrace();
-//                }
-//                return 0;
-//            }
-//        });
 
         // Đảo ngược danh sách để mục mới nhất ở trên cùng
         lswebsites = reverseWebsites(lswebsites);
@@ -88,7 +81,12 @@ public class History extends AppCompatActivity {
             }
         });
 
-
+        bindingHis.btnBackHis.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getOnBackPressedDispatcher().onBackPressed();
+            }
+        });
         hisAdapter.setDeleteClickListener(new HistoryAdapter.OnDeleteClickListener() {
             @Override
             public void onDeleteClick(Websites website) {
@@ -118,5 +116,15 @@ public class History extends AppCompatActivity {
             items.add(website);
         }
         return items;
+    }
+    private void changeFullScreen(boolean b) {
+        if(b){
+            WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+            new WindowInsetsControllerCompat(getWindow(), bindingHis.getRoot()).hide(WindowInsetsCompat.Type.systemBars());
+            new WindowInsetsControllerCompat(getWindow(), bindingHis.getRoot()).setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+        }else {
+            WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
+            new WindowInsetsControllerCompat(getWindow(), bindingHis.getRoot()).show(WindowInsetsCompat.Type.systemBars());
+        }
     }
 }

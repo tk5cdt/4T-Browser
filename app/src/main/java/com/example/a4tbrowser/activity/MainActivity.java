@@ -252,13 +252,6 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(View v) {
                         getOnBackPressedDispatcher().onBackPressed();
-//                        BrowseFragment frag = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
-//                        String tilte = frag.binding.webView.getTitle();
-//                        String url = frag.binding.webView.getUrl();
-//                        String time = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
-//                        byte[] image = frag.image();
-//
-//                        frag.save(url, tilte, time, image);
                     }
                 });
                 dialogBinding.btnForward.setOnClickListener(new View.OnClickListener() {
@@ -269,12 +262,6 @@ public class MainActivity extends AppCompatActivity {
                             frag = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
                             if (frag.binding.webView.canGoForward()) {
                                 frag.binding.webView.goForward();
-//                                String tilte = frag.binding.webView.getTitle();
-//                                String url = frag.binding.webView.getUrl();
-//                                String time = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
-//                                byte[] image = frag.image();
-//
-//                                frag.save(url, tilte, time, image);
 
                             }
                         }catch (Exception ignored) {}
@@ -424,6 +411,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(View v) {
                         Intent intent = new Intent(getApplicationContext(), History.class);
+                        intent.putExtra("full", fullScreen);
                         startActivity(intent);
                     }
                 });
