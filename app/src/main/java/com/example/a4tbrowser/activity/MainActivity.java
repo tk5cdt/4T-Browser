@@ -19,6 +19,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.content.Intent;
 import android.widget.Button;
@@ -165,7 +166,7 @@ public class MainActivity extends AppCompatActivity {
                     finish();
                 } else {
                     tabsList.remove(binding.myPager.getCurrentItem());
-                    binding.myPager.getAdapter().notifyDataSetChanged();
+                    Objects.requireNonNull(Objects.requireNonNull(binding.myPager.getAdapter())).notifyDataSetChanged();
                     binding.myPager.setCurrentItem(tabsList.size() - 1);
                 }
             }
@@ -299,45 +300,59 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(View v) {
                         getOnBackPressedDispatcher().onBackPressed();
-//                        BrowseFragment frag = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
-//                        String tilte = frag.binding.webView.getTitle();
-//                        String url = frag.binding.webView.getUrl();
-//                        String time = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
-//                        byte[] image = frag.image();
+//                        Fragment frag = tabsList.get(binding.myPager.getCurrentItem()).getFragment();
+//        if (frag instanceof BrowseFragment) {
+//            BrowseFragment browseFragment = (BrowseFragment) frag;
+//            // Save logic using browseFragment.binding.webView, etc.
+//            // (This part remains the same as your original code)
+//            String title = browseFragment.binding.webView.getTitle();
+//            String url = browseFragment.binding.webView.getUrl();
+//            String time = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+//            byte[] image = browseFragment.image(); // Assuming image() exists in BrowseFragment
 //
-//                        frag.save(url, tilte, time, image);
+//            browseFragment.save(url, title, time, image);
+//        }
                     }
                 });
                 dialogBinding.btnForward.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        BrowseFragment frag = null;
-                        try {
-                            frag = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
-                            if (frag.binding.webView.canGoForward()) {
-                                frag.binding.webView.goForward();
-//                                String tilte = frag.binding.webView.getTitle();
-//                                String url = frag.binding.webView.getUrl();
-//                                String time = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
-//                                byte[] image = frag.image();
-//
-//                                frag.save(url, tilte, time, image);
-
+//                        BrowseFragment frag = null;
+//                        try {
+//                            frag = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
+//                            if (frag.binding.webView.canGoForward()) {
+//                                frag.binding.webView.goForward();
+//                            }
+//                        }catch (Exception ignored) {}
+                        Fragment frag = tabsList.get(binding.myPager.getCurrentItem()).getFragment();
+                        if (frag instanceof BrowseFragment) {
+                            BrowseFragment browseFragment = (BrowseFragment) frag;
+                            if (browseFragment.binding.webView.canGoForward()) {
+                                browseFragment.binding.webView.goForward();
                             }
-                        }catch (Exception ignored) {}
+                        }
                     }
                 });
                 dialogBinding.btnSave.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         dialog.dismiss();
-                        BrowseFragment frag = null;
-                        try {
-                            frag = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
-                            saveAsPdf(frag.binding.webView);
-                        }catch (Exception e) {
-                            Snackbar.make(binding.getRoot(), "Error saving as PDF", Snackbar.LENGTH_SHORT).show();
+                        Fragment frag = tabsList.get(binding.myPager.getCurrentItem()).getFragment();
+                        if (frag instanceof BrowseFragment) {
+                            BrowseFragment browseFragment = (BrowseFragment) frag;
+                            try {
+                                saveAsPdf(browseFragment.binding.webView);
+                            } catch (Exception e) {
+                                Snackbar.make(binding.getRoot(), "Error saving as PDF", Snackbar.LENGTH_SHORT).show();
+                            }
                         }
+//                        BrowseFragment frag = null;
+//                        try {
+//                            frag = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
+//                            saveAsPdf(frag.binding.webView);
+//                        }catch (Exception e) {
+//                            Snackbar.make(binding.getRoot(), "Error saving as PDF", Snackbar.LENGTH_SHORT).show();
+//                        }
                     }
                 });
                 dialogBinding.btnFullscreen.setOnClickListener(new View.OnClickListener() {
@@ -360,75 +375,130 @@ public class MainActivity extends AppCompatActivity {
                 });
                 dialogBinding.btnDesktop.setOnClickListener(new View.OnClickListener() {
                     @Override
+//                    public void onClick(View v) {
+//                        BrowseFragment frag = null;
+//                        try {
+//                            frag = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
+//                            if(desktopMode){
+//                                frag.binding.webView.getSettings().setUserAgentString(null);
+//                                dialogBinding.btnDesktop.setIconTintResource(R.color.black);
+//                                dialogBinding.btnDesktop.setTextColor(ContextCompat.getColor(MainActivity.this, R.color.black));
+//                                desktopMode = false;
+//                            }else{
+//                                frag.binding.webView.getSettings().setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0");
+//                                frag.binding.webView.getSettings().setUseWideViewPort(true);
+//                                frag.binding.webView.evaluateJavascript("document.querySelector('meta[name=\"viewport\"]').setAttribute('content'," +
+//                                        " 'width=1024px, initial-scale=' + (document.documentElement.clientWidth / 1024));", null);
+//                                frag.binding.webView.reload();
+//                                dialogBinding.btnDesktop.setIconTintResource(R.color.cool_blue);
+//                                dialogBinding.btnDesktop.setTextColor(ContextCompat.getColor(MainActivity.this, R.color.cool_blue));
+//                                desktopMode = true;
+//                            }
+//                            frag.binding.webView.reload();
+//                            dialog.dismiss();
+//                        }catch (Exception ignored) {}
+//                    }
                     public void onClick(View v) {
-                        BrowseFragment frag = null;
-                        try {
-                            frag = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
-                            if(desktopMode){
-                                frag.binding.webView.getSettings().setUserAgentString(null);
+                        Fragment frag = tabsList.get(binding.myPager.getCurrentItem()).getFragment();
+                        if (frag instanceof BrowseFragment) {
+                            BrowseFragment browseFragment = (BrowseFragment) frag;
+                            WebSettings webSettings = browseFragment.binding.webView.getSettings();
+
+                            if (desktopMode) {
+                                // Disable Desktop Mode
+                                webSettings.setUserAgentString(null); // Reset user agent
                                 dialogBinding.btnDesktop.setIconTintResource(R.color.black);
                                 dialogBinding.btnDesktop.setTextColor(ContextCompat.getColor(MainActivity.this, R.color.black));
                                 desktopMode = false;
-                            }else{
-                                frag.binding.webView.getSettings().setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0");
-                                frag.binding.webView.getSettings().setUseWideViewPort(true);
-                                frag.binding.webView.evaluateJavascript("document.querySelector('meta[name=\"viewport\"]').setAttribute('content'," +
+                            } else {
+                                // Enable Desktop Mode
+                                webSettings.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0");
+                                webSettings.setUseWideViewPort(true);
+                                browseFragment.binding.webView.evaluateJavascript("document.querySelector('meta[name=\"viewport\"]').setAttribute('content'," +
                                         " 'width=1024px, initial-scale=' + (document.documentElement.clientWidth / 1024));", null);
-                                frag.binding.webView.reload();
+
                                 dialogBinding.btnDesktop.setIconTintResource(R.color.cool_blue);
                                 dialogBinding.btnDesktop.setTextColor(ContextCompat.getColor(MainActivity.this, R.color.cool_blue));
                                 desktopMode = true;
                             }
-                            frag.binding.webView.reload();
+
+                            browseFragment.binding.webView.reload(); // Reload after changes
                             dialog.dismiss();
-                        }catch (Exception ignored) {}
+                        }
                     }
                 });
                 dialogBinding.btnRefresh.setOnClickListener(new View.OnClickListener() {
                     @Override
+//                    public void onClick(View v) {
+//                        BrowseFragment fragment = null;
+//                        try {
+//                            fragment = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
+//                        } catch (Exception ignored) {
+//                        }
+//                        if (fragment != null && fragment.binding.webView != null) {
+//                            if (isNetworkAvailable()) {
+//                                fragment.binding.webView.loadUrl(fragment.binding.webView.getUrl());
+//                                dialog.dismiss();
+//                            } else {
+//                                showMessage("No internet connection");
+//                                dialog.dismiss();
+//                            }
+//                        }
+//                    }
                     public void onClick(View v) {
-                        BrowseFragment fragment = null;
-                        try {
-                            fragment = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
-                        } catch (Exception ignored) {
-                        }
-                        if (fragment != null && fragment.binding.webView != null) {
+                        Fragment frag = tabsList.get(binding.myPager.getCurrentItem()).getFragment();
+                        if (frag instanceof BrowseFragment) {
+                            BrowseFragment browseFragment = (BrowseFragment) frag;
                             if (isNetworkAvailable()) {
-                                fragment.binding.webView.loadUrl(fragment.binding.webView.getUrl());
-                                dialog.dismiss();
+                                browseFragment.binding.webView.loadUrl(browseFragment.binding.webView.getUrl());
                             } else {
                                 showMessage("No internet connection");
-                                dialog.dismiss();
                             }
+                            dialog.dismiss();
                         }
                     }
                 });
                 dialogBinding.btnShare.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        // Get the current BrowseFragment
-                        BrowseFragment fragment = null;
-                        try {
-                            fragment = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
-                        } catch (Exception ignored) {
-                            // Handle potential exceptions
-                        }
+//                    @Override
+//                    public void onClick(View v) {
+//                        // Get the current BrowseFragment
+//                        BrowseFragment fragment = null;
+//                        try {
+//                            fragment = (BrowseFragment) fragments.get(binding.myPager.getCurrentItem());
+//                        } catch (Exception ignored) {
+//                            // Handle potential exceptions
+//                        }
+//
+//                        // Check if the fragment exists and has a webView
+//                        if (fragment != null && fragment.binding.webView != null) {
+//                            // Get the current URL of the webView
+//                            String urlToShare = fragment.binding.webView.getUrl();
+//
+//                            // Create an Intent with the URL action and set the URL as data
+//                            Intent intent = new Intent(Intent.ACTION_SEND);
+//                            intent.setType("text/plain");
+//                            intent.putExtra(Intent.EXTRA_TEXT, urlToShare);
+//
+//                            // Use the Chooser to show available sharing options
+//                            Intent chooserIntent = Intent.createChooser(intent, "Share this link");
+//                            startActivity(chooserIntent);
+//                        }
+//                    }
+@Override
+public void onClick(View v) {
+    Fragment frag = tabsList.get(binding.myPager.getCurrentItem()).getFragment();
+    if (frag instanceof BrowseFragment) {
+        BrowseFragment browseFragment = (BrowseFragment) frag;
+        String urlToShare = browseFragment.binding.webView.getUrl();
 
-                        // Check if the fragment exists and has a webView
-                        if (fragment != null && fragment.binding.webView != null) {
-                            // Get the current URL of the webView
-                            String urlToShare = fragment.binding.webView.getUrl();
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.setType("text/plain");
+        intent.putExtra(Intent.EXTRA_TEXT, urlToShare);
 
-                            // Create an Intent with the URL action and set the URL as data
-                            Intent intent = new Intent(Intent.ACTION_SEND);
-                            intent.setType("text/plain");
-                            intent.putExtra(Intent.EXTRA_TEXT, urlToShare);
-
-                            // Use the Chooser to show available sharing options
-                            Intent chooserIntent = Intent.createChooser(intent, "Share this link");
-                            startActivity(chooserIntent);
-                        }
-                    }
+        Intent chooserIntent = Intent.createChooser(intent, "Share this link");
+        startActivity(chooserIntent);
+    }
+}
                 });
 
                 // Ton
